@@ -1,0 +1,12 @@
+[project]
+name = "app-langraph"
+version = "0.1.0"
+description = "Smart Student Assistant — Multi-agent system using LangGraph (Router, Subagents, Handoffs)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=1.0.0",
+    "langgraph>=0.4.0",
+    "langchain-openai>=0.3.0",
+    "python-dotenv>=1.0.0",
+]
