@@ -24,17 +24,17 @@ class C:
 
 
 AGENT_COLORS = {
-    "router":        C.ROUTER,
-    "study_agent":   C.STUDY,
-    "coding_agent":  C.CODING,
-    "writing_agent": C.WRITING,
+    "router":            C.ROUTER,
+    "weather_agent":     C.STUDY,
+    "places_agent":      C.CODING,
+    "itinerary_agent":   C.WRITING,
 }
 
 AGENT_ICONS = {
-    "router":        "🔀",
-    "study_agent":   "📚",
-    "coding_agent":  "💻",
-    "writing_agent": "✍️ ",
+    "router":            "🔀",
+    "weather_agent":     "🌤️ ",
+    "places_agent":      "📍",
+    "itinerary_agent":   "📋",
 }
 
 

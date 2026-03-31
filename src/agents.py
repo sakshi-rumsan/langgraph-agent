@@ -7,61 +7,68 @@ from .logger import log
 from .state import State, describe_messages, sanitize_messages
 from .stats import stats
 from .tools import (
-    call_debug,
-    call_explain,
-    call_grammar,
-    transfer_to_coding,
-    transfer_to_study,
-    transfer_to_writing,
+    call_check_weather,
+    call_find_places,
+    call_create_itinerary,
+    transfer_to_weather,
+    transfer_to_places,
+    transfer_to_itinerary,
 )
 
 
 # ──────────────────────────────────────────────
-#  Main Agents
+#  Main Travel Agents
 # ──────────────────────────────────────────────
-study_agent = create_agent(
+weather_agent = create_agent(
     model=MODEL,
-    name="study_agent",
-    tools=[call_explain, transfer_to_coding, transfer_to_writing],
+    name="weather_agent",
+    tools=[call_check_weather, transfer_to_places, transfer_to_itinerary],
     system_prompt=(
-        "You are a Study Agent. Your job is to explain concepts and theory.\n"
-        "Always use the explain_topic tool to answer the user.\n\n"
-        "Transfer rules — only hand off when the ENTIRE request is out of scope:\n"
-        "  • transfer_to_coding  → ONLY if the user wants code written or debugged and there is NO conceptual question to answer.\n"
-        "  • transfer_to_writing → ONLY if the user wants text/grammar improved and there is NO concept to explain.\n\n"
-        "If the request mixes explaining AND coding (e.g. 'why does this crash AND fix it'), handle the explanation yourself using explain_topic. Do NOT transfer.\n"
-        "If both coding and writing are requested, only hand off once."
+        "You are a Weather Agent for travel planning. Your job is to check weather and provide travel recommendations.\n"
+        "Always use the check_weather tool to get current conditions.\n\n"
+        "Weather analysis rules:\n"
+        "  • Always include what to bring (umbrella if rainy, sunscreen if sunny)\n"
+        "  • If heavy rain/storm: recommend staying indoors or visiting indoor attractions\n"
+        "  • If mild rain: suggest bringing umbrella but outdoor activities still possible\n"
+        "  • If sunny: recommend outdoor activities as planned\n\n"
+        "Transfer rules — only hand off when the ENTIRE request needs another agent:\n"
+        "  • transfer_to_places → ONLY if user ALSO wants to know attractions\n"
+        "  • transfer_to_itinerary → ONLY if user wants a complete day plan\n\n"
+        "Do NOT transfer unless explicitly needed. Answer directly with weather recommendations."
     ),
 )
 
-coding_agent = create_agent(
+places_agent = create_agent(
     model=MODEL,
-    name="coding_agent",
-    tools=[call_debug, transfer_to_study, transfer_to_writing],
+    name="places_agent",
+    tools=[call_find_places, transfer_to_weather, transfer_to_itinerary],
     system_prompt=(
-        "You are a Coding Agent. Your job is to debug and fix Python code.\n"
-        "Use the debug_python_code tool to analyze and fix code.\n\n"
+        "You are a Places Agent for travel planning. Your job is to find and recommend attractions.\n"
+        "Always use the find_places tool to discover destinations.\n\n"
         "CRITICAL RULES — FOLLOW EXACTLY:\n"
-        "1. After calling debug_python_code, compose a FINAL answer and STOP. "
-        "NEVER transfer after using your tool.\n"
-        "2. If the user says 'explain AND fix' or 'write an answer' → do it ALL yourself. "
-        "You can explain code in plain English.\n"
-        "3. ONLY transfer if you literally CANNOT help (e.g. user wants grammar check on an essay with zero code).\n"
-        "4. When in doubt, answer directly. Do NOT transfer.\n"
+        "1. After calling find_places, compose a FINAL answer with recommendations and STOP. NEVER transfer after using your tool.\n"
+        "2. Organize suggestions by: Must-visit landmarks, Dining spots, Activities, Scenic viewpoints\n"
+        "3. Include brief descriptions of why each place is worth visiting\n"
+        "4. ONLY transfer if user EXPLICITLY asks for weather check or complete itinerary.\n"
+        "5. When in doubt, answer directly. Do NOT transfer.\n"
     ),
 )
 
-writing_agent = create_agent(
+itinerary_agent = create_agent(
     model=MODEL,
-    name="writing_agent",
-    tools=[call_grammar, transfer_to_study, transfer_to_coding],
+    name="itinerary_agent",
+    tools=[call_create_itinerary, transfer_to_weather, transfer_to_places],
     system_prompt=(
-        "You are a Writing Agent. Improve grammar, clarity, and style of text.\n\n"
+        "You are an Itinerary Agent. Your job is to create complete, realistic day-trip plans.\n\n"
         "CRITICAL RULES — FOLLOW EXACTLY:\n"
-        "1. Your output is ALWAYS FINAL. NEVER transfer to another agent.\n"
-        "2. NEVER call transfer_to_coding or transfer_to_study. Those tools are disabled for you.\n"
-        "3. If the user's message contains code or a code explanation, just improve the writing around it. Do NOT transfer.\n"
-        "4. Use improve_writing tool if appropriate, then compose your final answer and STOP.\n"
+        "1. Your output is ALWAYS FINAL. NEVER transfer to another agent after creating an itinerary.\n"
+        "2. Always use create_itinerary tool to generate the plan.\n"
+        "3. Provide timing for EACH activity (9 AM - 9:30 AM: Activity, etc)\n"
+        "4. Include travel time between locations (5-10 min walk, 15 min drive, etc)\n"
+        "5. Consider user's interests and weather conditions in the plan\n"
+        "6. Include meal breaks (lunch around 12:30-1:30 PM, snack breaks)\n"
+        "7. Suggest indoor alternatives if rainy\n"
+        "8. ONLY transfer if you literally CANNOT access the tools.\n"
     ),
 )
 
@@ -94,13 +101,13 @@ def _run_agent(name: str, agent, state: State):
     return result
 
 
-def run_study_agent(state: State):
-    return _run_agent("study_agent", study_agent, state)
+def run_weather_agent(state: State):
+    return _run_agent("weather_agent", weather_agent, state)
 
 
-def run_coding_agent(state: State):
-    return _run_agent("coding_agent", coding_agent, state)
+def run_places_agent(state: State):
+    return _run_agent("places_agent", places_agent, state)
 
 
-def run_writing_agent(state: State):
-    return _run_agent("writing_agent", writing_agent, state)
+def run_itinerary_agent(state: State):
+    return _run_agent("itinerary_agent", itinerary_agent, state)

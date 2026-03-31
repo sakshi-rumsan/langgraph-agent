@@ -19,33 +19,38 @@ from .logger import C, divider
 #  Test Cases (built-in dataset)
 # ──────────────────────────────────────────────
 TEST_CASES: list[dict] = [
-    # Study
+    # Weather
     {
-        "question": "Explain what recursion is in programming.",
-        "expected": "Recursion is when a function calls itself to solve smaller instances of the same problem.",
-        "domain": "study",
+        "question": "What's the weather like in Paris and should I bring an umbrella?",
+        "expected": "weather forecast with temperature and precipitation info, recommendations about umbrella",
+        "domain": "weather",
     },
     {
-        "question": "What is the difference between a list and a tuple in Python?",
-        "expected": "Lists are mutable and use square brackets; tuples are immutable and use parentheses.",
-        "domain": "study",
+        "question": "Is it safe to go out if there's heavy rain in New York?",
+        "expected": "weather conditions and advisory about avoiding outdoor activities or recommendations for indoor alternatives",
+        "domain": "weather",
     },
-    # Coding
+    # Places
     {
-        "question": "Fix this code: def add(a, b) return a + b",
-        "expected": "The function is missing a colon after the parameter list: def add(a, b): return a + b",
-        "domain": "coding",
+        "question": "What are the most popular attractions and restaurants in Tokyo?",
+        "expected": "list of landmarks, restaurants, and attractions with brief descriptions",
+        "domain": "places",
     },
     {
-        "question": "Why does this crash? print(int('hello'))",
-        "expected": "int('hello') raises a ValueError because 'hello' is not a valid integer string.",
-        "domain": "coding",
+        "question": "Find me some good places to visit in Barcelona.",
+        "expected": "attractions, tourist sites, dining options organized by category",
+        "domain": "places",
     },
-    # Writing
+    # Itinerary
     {
-        "question": "Improve this sentence: Me and him went to the store yesterday for buy foods.",
-        "expected": "He and I went to the store yesterday to buy food.",
-        "domain": "writing",
+        "question": "Create a full day itinerary for visiting London. What should I do from morning to evening?",
+        "expected": "structured day plan with specific times, activities, travel times between locations, meal breaks",
+        "domain": "itinerary",
+    },
+    {
+        "question": "Plan my day trip to Amsterdam. Include museum visits and canal tours.",
+        "expected": "detailed itinerary with timing for each activity, breaks, and travel between locations",
+        "domain": "itinerary",
     },
 ]
 

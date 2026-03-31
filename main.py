@@ -1,9 +1,9 @@
 """
-Smart Student Assistant — Multi-Agent System using LangGraph
+🌴 Travel Planner Assistant — Multi-Agent System using LangGraph
 
 Architecture:
-  User → Router → Main Agent → Subagent → Response
-                   ↕ Handoff (if user switches topic)
+  User → Router → Travel Agent → Subagent → Response
+                   ↕ Handoff (if user needs different travel info)
 """
 
 import time
@@ -19,17 +19,17 @@ from src.evaluator import run_eval
 
 def main():
     divider("═")
-    print(f"{C.BOLD}  🎓  Smart Student Assistant{C.RESET}")
+    print(f"{C.BOLD}  🌴  Travel Planner Assistant{C.RESET}")
     divider("═")
-    print("  I can help you with:")
-    print(f"  {C.STUDY}📚 Study{C.RESET}   → Explain concepts")
-    print(f"  {C.CODING}💻 Coding{C.RESET}  → Debug Python code")
-    print(f"  {C.WRITING}✍️  Writing{C.RESET} → Improve your text")
+    print("  Plan your perfect day trip! I can help with:")
+    print(f"  {C.STUDY}🌤️  Weather{C.RESET}   → Check weather conditions")
+    print(f"  {C.CODING}📍 Places{C.RESET}  → Find popular attractions & destinations")
+    print(f"  {C.WRITING}📋 Itinerary{C.RESET} → Create a full day plan")
     print(f"\n  Trace log → {C.SUCCESS}{log_filename}{C.RESET}")
     print("  Type 'quit' to exit  |  'stats' for session summary  |  'eval' to evaluate\n")
     divider()
 
-    config = {"configurable": {"thread_id": "student-session-1"}}
+    config = {"configurable": {"thread_id": "travel-session-1"}}
 
     while True:
         try:
@@ -41,7 +41,7 @@ def main():
             continue
         if user_input.lower() in ("quit", "exit", "q"):
             stats.print_summary()
-            print("Goodbye! 👋")
+            print("Have a great trip! 🌍")
             break
         if user_input.lower() == "stats":
             stats.print_summary()

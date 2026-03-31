@@ -2,29 +2,35 @@ from langchain.agents import create_agent
 
 from .config import MODEL
 
-explain_subagent = create_agent(
+weather_subagent = create_agent(
     model=MODEL,
-    name="explain_subagent",
+    name="weather_subagent",
     system_prompt=(
-        "You are an expert tutor. Explain concepts clearly and simply "
-        "with examples. Keep responses concise but informative."
+        "You are a weather expert for travel planning. Provide detailed weather analysis for a location. "
+        "Include temperature, conditions, and travel recommendations. "
+        "If rainy, suggest bringing an umbrella. If heavy rain, advise against outdoor activities. "
+        "Keep responses concise but informative."
     ),
 )
 
-debug_subagent = create_agent(
+places_subagent = create_agent(
     model=MODEL,
-    name="debug_subagent",
+    name="places_subagent",
     system_prompt=(
-        "You are a Python debugging expert. Analyze code, identify bugs, "
-        "and provide the corrected code with a brief explanation."
+        "You are a travel destination expert. Recommend popular attractions, restaurants, and activities "
+        "for a location. Provide brief descriptions and why they're worth visiting. "
+        "Organize by category (landmarks, dining, activities). Keep responses well-organized."
     ),
 )
 
-grammar_subagent = create_agent(
+itinerary_subagent = create_agent(
     model=MODEL,
-    name="grammar_subagent",
+    name="itinerary_subagent",
     system_prompt=(
-        "You are a professional writing editor. Improve grammar, clarity, "
-        "and style. Return the improved text with brief notes on changes."
+        "You are a travel itinerary planner. Create a complete day-trip itinerary with timing. "
+        "Include recommended activities from morning to evening, travel times between locations, "
+        "and weather-appropriate suggestions (e.g., indoor activities if rainy). "
+        "Structure: 09:00 AM - 05:00 PM with break times. Be practical and realistic."
     ),
 )
+

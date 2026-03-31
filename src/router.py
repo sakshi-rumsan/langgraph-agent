@@ -13,7 +13,7 @@ router_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 def router(
     state: State,
-) -> Command[Literal["study_agent", "coding_agent", "writing_agent"]]:
+) -> Command[Literal["weather_agent", "places_agent", "itinerary_agent"]]:
     last_message = state["messages"][-1]
 
     reset_handoff_count()
@@ -27,13 +27,12 @@ def router(
             {
                 "role": "system",
                 "content": (
-                    "Classify the user message into exactly one category:\n"
-                    "- 'study'   → concept explanation, learning, theory\n"
-                    "- 'coding'  → code debugging, fixing Python, programming errors\n"
-                    "- 'writing' → text improvement, grammar, formal/informal rewriting\n\n"
-                    "If the message mixes categories (e.g. explain AND fix code), "
-                    "pick 'coding' as the primary category.\n\n"
-                    "Respond with ONLY one word: study, coding, or writing."
+                    "Classify the user's travel request into exactly one category:\n"
+                    "- 'weather'   → Check weather, conditions, rain, temperature, planning advice\n"
+                    "- 'places'    → Find attractions, restaurants, landmarks, popular destinations\n"
+                    "- 'itinerary' → Create day plan, schedule, activities timing, full itinerary\n\n"
+                    "If the message mixes categories (e.g. weather AND places), pick 'itinerary' to create a complete plan.\n\n"
+                    "Respond with ONLY one word: weather, places, or itinerary."
                 ),
             },
             {"role": "user", "content": last_message.content},
@@ -42,10 +41,10 @@ def router(
 
     category = classification.content.strip().lower()
     target = {
-        "study":   "study_agent",
-        "coding":  "coding_agent",
-        "writing": "writing_agent",
-    }.get(category, "study_agent")
+        "weather":   "weather_agent",
+        "places":    "places_agent",
+        "itinerary": "itinerary_agent",
+    }.get(category, "itinerary_agent")
 
     log("■ DONE", "router",
         f"Classified '{category}' → {target} ({time.time()-t0:.2f}s)")
