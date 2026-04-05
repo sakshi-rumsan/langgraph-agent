@@ -18,3 +18,5 @@ env/
 .idea/
 agent_logs/
 agent_traces/
+.agents
+skills-lock.json

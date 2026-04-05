@@ -10,4 +10,6 @@ dependencies = [
     "langchain-openai>=0.3.0",
     "python-dotenv>=1.0.0",
     "apify-client>=2.5.0",
+    "mem0ai[supabase]>=0.1.0",
+    "vecs>=0.4.5",
 ]

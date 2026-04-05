@@ -6,13 +6,13 @@ def get_memory_config():
     load_dotenv()
     return {
         "vector_store": {
-            "provider": "qdrant",
+            "provider": "supabase",
             "config": {
-                "collection_name": "episodic_memory",
+                "connection_string": os.environ.get("DATABASE_URL"),
+                "collection_name": "memories",
                 "embedding_model_dims": 768,
-                "url": "http://localhost:6333",
-                "api_key": "rumsan",
-                # "on_disk": True
+                "index_method": "hnsw",
+                "index_measure": "cosine_distance",
             },
         },
         "llm": {
