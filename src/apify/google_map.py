@@ -1,21 +1,31 @@
 import os
+import hashlib
 from apify_client import ApifyClient
 from src.config import APIFY_API_TOKEN
 
-def fetch_places_from_apify(location, search_strings, max_places=5, language="en"):
+# Simple in-memory cache for search results
+_places_cache = {}
+
+def fetch_places_from_apify(location, search_strings, max_places=5, language="en", skip_cache=False):
     """
     Fetch popular places from Apify based on location and search criteria.
+    Results are cached to avoid re-fetching the same location+categories.
 
     Args:
-        api_token (str): Your Apify API token.
         location (str): The location to search for places (e.g., "New York, USA").
         search_strings (list): List of search strings (e.g., ["restaurant", "cafe"]).
-        max_places (int): Maximum number of places to fetch per search. Default is 50.
+        max_places (int): Maximum number of places to fetch per search. Default is 5.
         language (str): Language for the results. Default is "en".
+        skip_cache (bool): Skip cache and fetch fresh results.
 
     Returns:
         list: A list of places with details fetched from Apify.
     """
+    # Check cache first
+    cache_key = hashlib.md5(f"{location}:{'|'.join(sorted(search_strings))}".encode()).hexdigest()
+    if cache_key in _places_cache and not skip_cache:
+        return _places_cache[cache_key]
+    
     # Initialize the ApifyClient with your API token
     client = ApifyClient(APIFY_API_TOKEN)
 
@@ -23,7 +33,7 @@ def fetch_places_from_apify(location, search_strings, max_places=5, language="en
     run_input = {
     "searchStringsArray": search_strings,
     "locationQuery": location,
-    "maxCrawledPlacesPerSearch":5,
+    "maxCrawledPlacesPerSearch": 3,
     "language": "en",
     "categoryFilterWords": [],
     "searchMatching": "all",
@@ -72,9 +82,34 @@ def fetch_places_from_apify(location, search_strings, max_places=5, language="en
     results = []
     for item in client.dataset(run["defaultDatasetId"]).iterate_items():
         results.append(item)
-    # print(f"Fetched {len(results)} places from Apify for location: {results}")
+    
+    # Cache the results
+    _places_cache[cache_key] = results
     
     return results
+
+
+def smart_search_categories(query):
+    """
+    Intelligently choose which categories to search based on user's query.
+    Reduces search time by only querying relevant categories.
+    """
+    query_lower = query.lower()
+    
+    # Food-focused queries
+    if any(word in query_lower for word in ["restaurant", "food", "eat", "dining", "cafe", "vegan", "vegetarian"]):
+        return ["restaurants"]
+    
+    # Sightseeing-focused queries
+    if any(word in query_lower for word in ["attraction", "landmark", "sight", "temple", "museum", "monument"]):
+        return ["attractions", "landmarks"]
+    
+    # Shopping/shopping district queries
+    if any(word in query_lower for word in ["shop", "market", "district", "mall"]):
+        return ["attractions", "landmarks"]
+    
+    # Default: search all categories
+    return ["attractions", "restaurants", "landmarks"]
 
 # Example usage
 # if __name__ == "__main__":

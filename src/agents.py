@@ -2,6 +2,8 @@ import time
 
 from langchain.agents import create_agent
 
+from src.memory_config import add_episodic_memory, get_memory, search_episodic_memory
+
 from .config import MODEL
 from .logger import log
 from .state import State, describe_messages, sanitize_messages
@@ -16,6 +18,10 @@ from .tools import (
 )
 
 
+from langchain_core.messages import HumanMessage, AIMessage
+
+memory = get_memory()
+
 # ──────────────────────────────────────────────
 #  Main Travel Agents
 # ──────────────────────────────────────────────
@@ -24,17 +30,26 @@ weather_agent = create_agent(
     name="weather_agent",
     tools=[call_check_weather, transfer_to_places, transfer_to_itinerary],
     system_prompt=(
-        "You are a Weather Agent for travel planning. Your job is to check weather and provide travel recommendations.\n"
-        "Always use the check_weather tool to get current conditions.\n\n"
-        "Weather analysis rules:\n"
-        "  • Always include what to bring (umbrella if rainy, sunscreen if sunny)\n"
-        "  • If heavy rain/storm: recommend staying indoors or visiting indoor attractions\n"
+        "You are a Weather Agent for travel planning. Your job is to understand weather preferences and check weather for destinations.\n\n"
+        "PREFERENCE HANDLING:\n"
+        "  If user expresses preferences (e.g., 'I like hot/cold places', 'I prefer tropical weather'):\n"
+        "    1. Acknowledge their preference explicitly\n"
+        "    2. Ask which specific destination they're considering\n"
+        "    3. Then use check_weather to verify current conditions match their preference\n"
+        "  Use memory context to understand historical preferences and tailor suggestions.\n\n"
+        "WEATHER ANALYSIS RULES:\n"
+        "  • Always use check_weather tool when a location is mentioned\n"
+        "  • Include what to bring (umbrella if rainy, sunscreen if sunny)\n"
+        "  • If heavy rain/storm: recommend indoor attractions or rescheduling\n"
         "  • If mild rain: suggest bringing umbrella but outdoor activities still possible\n"
-        "  • If sunny: recommend outdoor activities as planned\n\n"
-        "Transfer rules — only hand off when the ENTIRE request needs another agent:\n"
-        "  • transfer_to_places → ONLY if user ALSO wants to know attractions\n"
-        "  • transfer_to_itinerary → ONLY if user wants a complete day plan\n\n"
-        "Do NOT transfer unless explicitly needed. Answer directly with weather recommendations."
+        "  • If sunny/hot: recommend outdoor activities and hydration\n"
+        "  • Match recommendations to user's stated weather preferences\n\n"
+        "TRANSFER RULES:\n"
+        "  • transfer_to_places → ONLY if user wants attraction recommendations\n"
+        "  • transfer_to_itinerary → ONLY if user wants a complete day schedule\n\n"
+        "Example:\n"
+        "  User: 'I like hot places'\n"
+        "  You: 'Great! Hot destinations are wonderful. Where are you thinking of visiting? Once you mention a location, I'll check the current weather to ensure it matches your preference.'"
     ),
 )
 
@@ -111,3 +126,65 @@ def run_places_agent(state: State):
 
 def run_itinerary_agent(state: State):
     return _run_agent("itinerary_agent", itinerary_agent, state)
+
+
+# Uncomment to add episodic memory
+def run_search_memory_agent(state: State, user_id: str):
+    """Search episodic memory for user context based on their query."""
+    # Extract the user's query from the latest HumanMessage
+    from langchain_core.messages import HumanMessage
+    
+    query = None
+    for msg in reversed(state.get("messages", [])):
+        if isinstance(msg, HumanMessage):
+            query = msg.content
+            break
+    
+    if not query:
+        return "No query found in conversation history."
+    
+    # Search memory for relevant context
+    try:
+     results = search_episodic_memory(memory, query, user_id=user_id)
+    except Exception as e:
+        log("❌ MEMORY ERROR", "memory_agent", "Error searching memory", str(e))
+        results = ["no memory"]
+    
+    # Return results or default message
+    if results and len(results) > 0:
+        return f"Found relevant memory: {results}"
+    else:
+        return "No memory of user found for this query."
+
+
+def run_save_memory_agent(state: State, user_id: str):
+    """Save the current conversation to episodic memory."""
+    from langchain_core.messages import HumanMessage, AIMessage
+    
+    clean_msgs = sanitize_messages(state["messages"])
+    query = None
+    for msg in reversed(state.get("messages", [])):
+        if isinstance(msg, HumanMessage):
+            query = msg.content
+           
+            break
+    messages_for_memory = {"role": "user", "content":  query}
+    
+    # # Convert LangChain messages to dict format that mem0 expects
+    # messages_for_memory = []
+    # for msg in clean_msgs:
+    #     if isinstance(msg, HumanMessage):
+    #         messages_for_memory.append({"role": "user", "content": str(msg.content)})
+    #     elif isinstance(msg, AIMessage):
+    #         messages_for_memory.append({"role": "assistant", "content": str(msg.content)})
+    
+    if messages_for_memory:
+        add_episodic_memory(
+            memory, 
+            messages_for_memory , 
+            user_id=user_id, 
+            metadata={"category": "Travel"}
+        )
+        log("💾 SAVED", "memory_agent", "Conversation saved to episodic memory")
+    
+    return "Memory saved successfully."

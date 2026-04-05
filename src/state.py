@@ -1,13 +1,15 @@
 from typing import Annotated, TypedDict
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage, SystemMessage
 from langgraph.graph.message import add_messages
 
 
 class State(TypedDict):
-    messages:      Annotated[list[AnyMessage], add_messages]
-    active_agent:  str
-    handoff_count: int
+    messages:        Annotated[list[AnyMessage], add_messages]
+    active_agent:    str
+    handoff_count:   int
+    user_id:         str
+    memory_context:  str
 
 
 def sanitize_messages(messages: list) -> list:
@@ -33,7 +35,9 @@ def sanitize_messages(messages: list) -> list:
 def describe_messages(messages: list) -> str:
     lines = []
     for m in messages:
-        if isinstance(m, HumanMessage):
+        if isinstance(m, SystemMessage):
+            lines.append(f"  📚 Memory  : {str(m.content)[:80]}")
+        elif isinstance(m, HumanMessage):
             lines.append(f"  👤 Human   : {str(m.content)[:80]}")
         elif isinstance(m, AIMessage):
             tc = [t["name"] for t in (m.tool_calls or [])]

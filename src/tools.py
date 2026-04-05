@@ -9,7 +9,7 @@ from .logger import log
 from .stats import stats
 from .subagents import weather_subagent, places_subagent, itinerary_subagent
 from .weather.weather import get_weather_by_location
-from .apify.google_map import fetch_places_from_apify
+from .apify.google_map import fetch_places_from_apify, smart_search_categories
 
 
 # ──────────────────────────────────────────────
@@ -76,18 +76,22 @@ def call_check_weather(location: str) -> str:
 
 
 @tool("find_places", description="Find popular places and attractions at a destination")
-def call_find_places(location: str) -> str:
+def call_find_places(location: str, query: str = "") -> str:
     """Find attractions and popular places for a destination."""
     log("🔧 TOOL", "places_agent", "find_places called", f"location: {location[:80]}")
     stats.record_tool("find_places")
     t0 = time.time()
     
     try:
-        # Fetch places from Apify
+        # Intelligently choose search categories to minimize Apify calls
+        categories = smart_search_categories(query or location)
+        log("📊 OPTIMIZE", "places_agent", f"Smart search: {len(categories)} categories", f"categories: {categories}")
+        
+        # Fetch places from Apify (cached if repeated)
         places = fetch_places_from_apify(
             location, 
-            ["attractions", "restaurants", "landmarks"],
-            max_places=15
+            categories,
+            max_places=5
         )
         
         if not places:

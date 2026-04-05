@@ -12,7 +12,7 @@ from langchain_core.messages import AIMessage
 
 from src.config import MAX_TURNS
 from src.graph import graph
-from src.logger import C, divider, log, log_filename
+from src.logger import C, divider, log
 from src.stats import stats
 from src.evaluator import run_eval
 
@@ -25,11 +25,14 @@ def main():
     print(f"  {C.STUDY}🌤️  Weather{C.RESET}   → Check weather conditions")
     print(f"  {C.CODING}📍 Places{C.RESET}  → Find popular attractions & destinations")
     print(f"  {C.WRITING}📋 Itinerary{C.RESET} → Create a full day plan")
-    print(f"\n  Trace log → {C.SUCCESS}{log_filename}{C.RESET}")
+  
     print("  Type 'quit' to exit  |  'stats' for session summary  |  'eval' to evaluate\n")
     divider()
 
-    config = {"configurable": {"thread_id": "travel-session-1"}}
+    # Generate or use user identifier
+    user_id = input(f"\n{C.BOLD}Enter your user ID (or press Enter for default):{C.RESET} ").strip() or "default_user"
+    config = {"configurable": {"thread_id": f"travel-session-{user_id}"}}
+    initial_state = {"user_id": user_id, "memory_context": ""}
 
     while True:
         try:
@@ -57,7 +60,11 @@ def main():
         divider()
 
         t0 = time.time()
-        state = {"messages": [{"role": "user", "content": user_input}]}
+        state = {
+            "messages": [{"role": "user", "content": user_input}],
+            "user_id": user_id,
+            "memory_context": ""
+        }
         for turn in range(MAX_TURNS):
             result = graph.invoke(state, config=config)
             messages = result["messages"]

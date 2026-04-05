@@ -41,13 +41,13 @@ AGENT_ICONS = {
 # ──────────────────────────────────────────────
 #  File Logger
 # ──────────────────────────────────────────────
-log_filename = f"agent_trace_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+# log_filename = f"agent_trace_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
 file_logger = logging.getLogger("agent_trace")
 file_logger.setLevel(logging.DEBUG)
-_fh = logging.FileHandler(log_filename, encoding="utf-8")
-_fh.setFormatter(logging.Formatter("%(asctime)s | %(message)s", datefmt="%H:%M:%S"))
-file_logger.addHandler(_fh)
+# _fh = logging.FileHandler(log_filename, encoding="utf-8")
+# _fh.setFormatter(logging.Formatter("%(asctime)s | %(message)s", datefmt="%H:%M:%S"))
+# file_logger.addHandler(_fh)
 
 
 def divider(char="─", width=60, color=C.DIVIDER):

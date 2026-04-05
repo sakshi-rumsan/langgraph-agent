@@ -1,6 +1,6 @@
 import time
 
-from .logger import AGENT_ICONS, C, divider, log_filename
+from .logger import AGENT_ICONS, C, divider
 
 
 class SessionStats:
@@ -45,7 +45,7 @@ class SessionStats:
             print(f"\n  Handoffs ({len(self.handoffs)}):")
             for h in self.handoffs:
                 print(f"    🔁 {h}")
-        print(f"\n  Log saved to         : {C.SUCCESS}{log_filename}{C.RESET}")
+        # print(f"\n  Log saved to         : {C.SUCCESS}{log_filename}{C.RESET}")
         divider("═")
 
 

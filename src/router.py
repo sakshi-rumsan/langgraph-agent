@@ -8,7 +8,7 @@ from .logger import log
 from .state import State
 from .tools import reset_handoff_count
 
-router_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+router_llm = ChatOpenAI(model="llama3.1:latest", temperature=0,base_url =  "https://jo3m4y06rnnwhaz.askbhunte.com/v1",api_key='ollama')
 
 
 def router(
@@ -28,10 +28,14 @@ def router(
                 "role": "system",
                 "content": (
                     "Classify the user's travel request into exactly one category:\n"
-                    "- 'weather'   → Check weather, conditions, rain, temperature, planning advice\n"
-                    "- 'places'    → Find attractions, restaurants, landmarks, popular destinations\n"
-                    "- 'itinerary' → Create day plan, schedule, activities timing, full itinerary\n\n"
-                    "If the message mixes categories (e.g. weather AND places), pick 'itinerary' to create a complete plan.\n\n"
+                    "- 'weather'     → Asking about/checking weather or stating weather preferences\n"
+                    "- 'places'      → Asking to find/search attractions, restaurants, landmarks\n"
+                    "- 'itinerary'   → Asking to create/plan day schedule with timing\n\n"
+                    "Examples:\n"
+                    "  'I like hot places' → weather (preference)\n"
+                    "  'Find restaurants in Tokyo' → places (request)\n"
+                    "  'Create a day plan' → itinerary (request)\n"
+                    "  'What's the weather in NYC?' → weather (check)\n\n"
                     "Respond with ONLY one word: weather, places, or itinerary."
                 ),
             },

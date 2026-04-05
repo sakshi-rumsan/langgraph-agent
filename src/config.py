@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
 load_dotenv()
 
 # Load environment variables
@@ -14,6 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL = "openai:gpt-4o-mini"
+MODEL = ChatOpenAI(model="llama3.1:latest", temperature=0,base_url =  "https://jo3m4y06rnnwhaz.askbhunte.com/v1",api_key='ollama')
+
 MAX_HANDOFFS = 2
 MAX_TURNS = 10
