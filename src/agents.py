@@ -19,8 +19,18 @@ from .tools import (
 
 
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_openai import ChatOpenAI
+import os
 
 memory = get_memory()
+
+# Supervisor LLM (same as router)
+supervisor_llm = ChatOpenAI(
+    model="llama3.1:latest",
+    temperature=0,
+    base_url=os.getenv("OLLAMA_BASE_URL") + "/v1",
+    api_key="ollama",
+)
 
 # ──────────────────────────────────────────────
 #  Main Travel Agents
@@ -188,3 +198,110 @@ def run_save_memory_agent(state: State, user_id: str):
         log("💾 SAVED", "memory_agent", "Conversation saved to episodic memory")
     
     return "Memory saved successfully."
+
+
+# ──────────────────────────────────────────────
+#  Supervisor Agent
+# ──────────────────────────────────────────────
+def run_supervisor(state: State):
+    """
+    Supervisor agent: searches mem0 for context, classifies the query,
+    and either responds directly or routes to travel agents.
+    Returns updated state with classification and memory_context.
+    """
+    user_id = state.get("user_id", "default_user")
+    
+    # 1. Extract user query
+    query = None
+    for msg in reversed(state.get("messages", [])):
+        if isinstance(msg, HumanMessage):
+            query = msg.content
+            break
+    
+    if not query:
+        return {
+            "memory_context": "",
+            "active_agent": "supervisor",
+        }
+    
+    # 2. Search mem0 for memory context
+    memory_context = ""
+    try:
+        results = search_episodic_memory(memory, query, user_id=user_id)
+        if results and results.get("results"):
+            memories = [r.get("memory", "") for r in results["results"]]
+            memory_context = "; ".join(memories)
+            log("💾 SEARCH", "supervisor", "Retrieved user memory", memory_context[:100])
+    except Exception as e:
+        log("❌ MEMORY ERROR", "supervisor", "Error searching memory", str(e))
+    
+    # 3. Classify: travel-tool query or general?
+    classification = supervisor_llm.invoke([
+        {
+            "role": "system",
+            "content": (
+                "You are a travel assistant supervisor. Classify the user's message:\n"
+                "- 'travel' → if they want weather info, place recommendations, or itinerary planning\n"
+                "- 'general' → for greetings, chitchat, general questions, preferences, or anything not requiring travel tools\n\n"
+                "Examples:\n"
+                "  'What is the weather in Paris?' → travel\n"
+                "  'Find restaurants in Tokyo' → travel\n"
+                "  'Plan my day in London' → travel\n"
+                "  'Hello' → general\n"
+                "  'What do you remember about me?' → general\n"
+                "  'I like spicy food' → general\n"
+                "  'Thank you!' → general\n"
+                "  'Who are you?' → general\n\n"
+                "Respond with ONLY one word: travel or general."
+            ),
+        },
+        {"role": "user", "content": query},
+    ])
+    
+    category = classification.content.strip().lower()
+    log("🧠 SUPERVISOR", "supervisor", f"Classified as '{category}'", f"query: {query[:80]}")
+    
+    # 4. If general → respond directly with memory context
+    if category != "travel":
+        memory_prompt = ""
+        if memory_context:
+            memory_prompt = f"\n\nUser memory context: {memory_context}\nUse this to personalize your response."
+        
+        response = supervisor_llm.invoke([
+            {
+                "role": "system",
+                "content": (
+                    "You are a friendly travel planning assistant. "
+                    "Answer the user's message naturally using any memory context provided. "
+                    "Keep responses concise and helpful. "
+                    "If the user shares preferences, acknowledge them warmly."
+                    f"{memory_prompt}"
+                ),
+            },
+            {"role": "user", "content": query},
+        ])
+        
+        # Save to memory
+        try:
+            add_episodic_memory(
+                memory,
+                {"role": "user", "content": query},
+                user_id=user_id,
+                metadata={"category": "general"}
+            )
+        except Exception as e:
+            log("❌ MEMORY ERROR", "supervisor", "Error saving memory", str(e))
+        
+        log("🧠 SUPERVISOR", "supervisor", "Responded directly", response.content[:100])
+        
+        return {
+            "messages": [AIMessage(content=response.content)],
+            "memory_context": memory_context,
+            "active_agent": "supervisor",
+        }
+    
+    # 5. If travel → pass memory context along for router → agents
+    return {
+        "memory_context": memory_context,
+        "active_agent": "router",
+    }
